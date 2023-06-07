@@ -2,6 +2,19 @@
 
 完全离线的智能聊天知识库系统（ChatGLM-6B+Milvus）
 
+python=3.9+
+
+```shell
+python -m venv venv
+
+# macOS/Linux
+source venv/bin/activate
+# Windows
+venv/Scripts/activate
+
+pip install -r requirements.txt
+```
+
 ## Milvus
 Start Milvus
 In the same directory as the docker-compose.yml file, start up Milvus by running:

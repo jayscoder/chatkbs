@@ -162,3 +162,6 @@ cython_debug/
 **/.DS_Store
 volumes
 data/*
+
+database.db
+THUDM/chatglm-6b/*

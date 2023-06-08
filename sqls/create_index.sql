@@ -1,0 +1,24 @@
+-- CREATE INDEX IF NOT EXISTS `bfz_patient_id_INDEX` ON `kbs_file` (`patient_id`);
+-- CREATE INDEX IF NOT EXISTS `bfz_create_time_INDEX` ON `bfz` (`create_time`);
+--
+-- CREATE INDEX IF NOT EXISTS `hy_patient_id_INDEX` ON `hy` (`patient_id`);
+-- CREATE INDEX IF NOT EXISTS `hy_date_em_INDEX` ON `hy` (`date_em`);
+--
+-- CREATE INDEX IF NOT EXISTS jbxx_patient_id_INDEX ON jbxx (patient_id);
+-- CREATE INDEX IF NOT EXISTS jbxx_create_time_INDEX ON jbxx (create_time);
+-- CREATE INDEX IF NOT EXISTS jbxx_birth_date_INDEX ON jbxx (birth_date);
+--
+-- CREATE INDEX IF NOT EXISTS tz_patient_id_INDEX ON tz (patient_id);
+-- CREATE INDEX IF NOT EXISTS tz_follow_up_date_INDEX ON tz (follow_up_date);
+--
+-- CREATE INDEX IF NOT EXISTS yp_start_stop_date_INDEX ON yp (start_date, stop_date);
+-- CREATE INDEX IF NOT EXISTS yp_patient_id_INDEX ON yp (patient_id);
+-- CREATE INDEX IF NOT EXISTS yp_patient_name_INDEX ON yp (patient_name);
+-- CREATE INDEX IF NOT EXISTS yp_patient_case_no_INDEX ON yp (patient_case_no);
+--
+-- CREATE INDEX IF NOT EXISTS jbxx_GROUP_CONCAT_r_nm_diagnosis_INDEX ON jbxx ("GROUP_CONCAT(r.nm_diagnosis)");
+-- CREATE INDEX IF NOT EXISTS yp_nm_drug_type_INDEX ON yp (nm_drug_type);
+-- CREATE INDEX IF NOT EXISTS yp_nm_drug_INDEX ON yp (nm_drug);
+-- CREATE INDEX IF NOT EXISTS hy_nm_index_lis_INDEX ON hy (nm_index_lis);
+-- CREATE INDEX IF NOT EXISTS hy_value_lis_INDEX ON hy (value_lis);
+

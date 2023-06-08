@@ -163,5 +163,5 @@ cython_debug/
 volumes
 data/*
 
-database.db
+database*.db
 THUDM/chatglm-6b/*

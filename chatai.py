@@ -6,8 +6,11 @@ from typing import List, Tuple
 tokenizer = AutoTokenizer.from_pretrained(config.CHATGLM_MODEL_PATH, trust_remote_code=True)
 
 if torch.has_cuda:
-    print('cuda')
-    model = AutoModel.from_pretrained(config.CHATGLM_MODEL_PATH, trust_remote_code=True).half().cuda()
+    # 获取当前剩余显存最大的显卡索引
+    device = torch.device('cuda')
+    max_memory_idx = torch.cuda.memory_reserved(device)[:-1].argmax()
+    print(f'cuda:{max_memory_idx}')
+    model = AutoModel.from_pretrained(config.CHATGLM_MODEL_PATH, trust_remote_code=True).half().cuda(max_memory_idx)
 elif torch.has_mps:
     print('mps')
     model = AutoModel.from_pretrained(config.CHATGLM_MODEL_PATH, trust_remote_code=True).half().to('mps')

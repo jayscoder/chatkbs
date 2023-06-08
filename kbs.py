@@ -17,7 +17,7 @@ def rebuild_kbs():
     yield from generate_kbs()
 
 
-def generate_kbs():
+def generate_kbs(chunk_limit: int):
     new_filenames = utils.list_files(config.DATA_DIR)
 
     outputs = f'{config.DATA_DIR}中共有{len(new_filenames)}个文件: '
@@ -53,7 +53,7 @@ def generate_kbs():
         yield '\n'.join(outputs)
 
         for idx, filename in enumerate(merged_list):
-            for output in generate_kbs_file(root=config.DATA_DIR, filename=filename, old_md5=old_file_md5[filename]):
+            for output in generate_kbs_file(root=config.DATA_DIR, filename=filename, old_md5=old_file_md5[filename], chunk_limit=chunk_limit):
                 outputs[idx + 1] = f'[{idx + 1}/{total}] {filename}: {output}'
                 yield '\n'.join(outputs)
 
@@ -61,7 +61,7 @@ def generate_kbs():
         yield '\n'.join(outputs)
 
 
-def generate_kbs_file(root: str, filename: str, old_md5: str) -> str:
+def generate_kbs_file(root: str, filename: str, old_md5: str, chunk_limit: int) -> str:
     filepath = os.path.join(root, filename)
 
     filename_md5 = utils.calculate_md5(filename)

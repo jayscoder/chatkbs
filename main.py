@@ -99,15 +99,25 @@ def build_search():
 
 def build_generate():
     with gr.Tab('知识库生成'):
-        generate_kbs_text_output = gr.Textbox(label='Output')
         with gr.Row():
             with gr.Column(scale=4):
-                gr.Button('更新').click(kbs.generate_kbs, inputs=[], outputs=generate_kbs_text_output,
-                                        show_progress=True)
+                generate_kbs_text_output = gr.Textbox(label='Output')
+                with gr.Column(scale=4):
+                    update_button = gr.Button('更新')
 
-            with gr.Column(scale=4):
-                gr.Button('重置').click(kbs.rebuild_kbs, inputs=[], outputs=generate_kbs_text_output,
-                                        show_progress=True)
+                with gr.Column(scale=4):
+                    reset_button = gr.Button('重置')
+
+            with gr.Column(scale=1):
+                chunk_limit = gr.Slider(10, 4096,
+                                        value=400,
+                                        step=1.0,
+                                        label="切块尺寸",
+                                        interactive=True)
+        update_button.click(kbs.generate_kbs, inputs=[chunk_limit], outputs=generate_kbs_text_output,
+                            show_progress=True)
+        reset_button.click(kbs.rebuild_kbs, inputs=[chunk_limit], outputs=generate_kbs_text_output,
+                           show_progress=True)
 
 
 def build_chatglm():
@@ -221,4 +231,5 @@ app, _, _ = demo.queue().launch(
         server_name=config.SERVER_NAME,
         server_port=config.SERVER_PORT,
         favicon_path=config.FAVICON,
+        debug=False
 )

@@ -34,8 +34,6 @@ def generate_kbs():
     FROM kbs_file
     ''').fetchall()
 
-        outputs = f'{outputs}\n知识库中已有{len(results)}个文件'
-
         old_file_md5 = defaultdict(str)
         old_filenames = []
         for row in results:
@@ -45,20 +43,25 @@ def generate_kbs():
         merged_list = list(set(old_filenames + new_filenames))
         total = len(merged_list)
 
-        outputs = f'{outputs}\n一共需要比对{total}个文件'
+        outputs = [
+            f'{outputs}\n知识库中已有{len(results)}个文件\n一共需要比对{total}个文件'
+        ]
 
         for idx, filename in enumerate(merged_list):
-            final_output = ''
-            for output in generate_kbs_file(root=config.DATA_DIR, filename=filename, old_md5=old_file_md5[filename]):
-                yield f'{outputs}\n[{idx + 1}/{total}] {output}'
-                final_output = output
+            outputs.append(f'[{idx + 1}/{total}] {filename}: 等待处理')
 
-            outputs = f'{outputs}\n[{idx + 1}/{total}] {final_output}'
+        yield '\n'.join(outputs)
+
+        for idx, filename in enumerate(merged_list):
+            for output in generate_kbs_file(root=config.DATA_DIR, filename=filename, old_md5=old_file_md5[filename]):
+                outputs[idx + 1] = f'[{idx + 1}/{total}] {filename}: {output}'
+                yield '\n'.join(outputs)
+
+        outputs.append('全部已经处理完成')
+        yield '\n'.join(outputs)
 
 
 def generate_kbs_file(root: str, filename: str, old_md5: str) -> str:
-    yield f'{filename}: 开始处理'
-
     filepath = os.path.join(root, filename)
 
     filename_md5 = utils.calculate_md5(filename)
@@ -68,17 +71,20 @@ def generate_kbs_file(root: str, filename: str, old_md5: str) -> str:
 
         if not os.path.exists(filepath):
             db_utils.delete_all_by_filename_md5(cursor=cursor, filename_md5=filename_md5)
-            yield f'{filename}: 已删除'
+            yield '已删除'
             return
 
         _, ext = os.path.splitext(filename)
         file_raw_text = utils.advanced_read_text(filepath)
         file_full_text = f'文件 {filename}' + '\n' + file_raw_text
         file_text_md5 = utils.calculate_md5(file_full_text)
+        file_raw_text_length = len(file_raw_text)
 
         if file_text_md5 == old_md5:
-            yield f'{filename}: 无改动'
+            yield '无改动'
             return
+
+        yield f'字符数={file_raw_text_length}'
 
         file_text_embedding = utils.text_embedding(file_full_text)
 
@@ -104,7 +110,6 @@ def generate_kbs_file(root: str, filename: str, old_md5: str) -> str:
         )
 
         chunks = utils.text_to_chunks(file_raw_text)
-        file_raw_text_length = len(file_raw_text)
         for no, chunk in enumerate(chunks):
             chunk_full_text = f'文件 {filename} 第{no}部分\n' + chunk
 
@@ -139,10 +144,10 @@ def generate_kbs_file(root: str, filename: str, old_md5: str) -> str:
                     embedding=chunk_embedding
             )
 
-            yield f'{filename}: [{no + 1}/{len(chunks)}] 字符数: {file_raw_text_length}'
+            yield f'[{no + 1}/{len(chunks)}] 字符数={file_raw_text_length}'
     db_milvus.kbs_file_milvus.flush()
     db_milvus.kbs_chunk_milvus.flush()
-    yield f'{filename}: 👌 字符数: {file_raw_text_length}'
+    yield f'👌 字符数={file_raw_text_length}'
 
 
 def search_kbs(filename_fuzzy_match: str,
@@ -153,7 +158,6 @@ def search_kbs(filename_fuzzy_match: str,
                glm_max_length: int,
                glm_top_p: float,
                glm_temperature: float):
-
     print(f'search_file_limit={search_file_limit} search_chunk_limit={search_chunk_limit}')
     chatbot[:] = []
     chatbot.append((utils.show_text(search_input), ""))

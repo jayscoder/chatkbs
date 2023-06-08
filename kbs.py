@@ -12,9 +12,9 @@ import db_milvus
 import chatai
 
 
-def rebuild_kbs():
+def rebuild_kbs(chunk_limit: int):
     db_utils.rebuild()
-    yield from generate_kbs()
+    yield from generate_kbs(chunk_limit=chunk_limit)
 
 
 def generate_kbs(chunk_limit: int):
@@ -53,7 +53,8 @@ def generate_kbs(chunk_limit: int):
         yield '\n'.join(outputs)
 
         for idx, filename in enumerate(merged_list):
-            for output in generate_kbs_file(root=config.DATA_DIR, filename=filename, old_md5=old_file_md5[filename], chunk_limit=chunk_limit):
+            for output in generate_kbs_file(root=config.DATA_DIR, filename=filename, old_md5=old_file_md5[filename],
+                                            chunk_limit=chunk_limit):
                 outputs[idx + 1] = f'[{idx + 1}/{total}] {filename}: {output}'
                 yield '\n'.join(outputs)
 

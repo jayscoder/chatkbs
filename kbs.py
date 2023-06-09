@@ -269,7 +269,7 @@ def file_recursive_predict(
                         max_length=max_length,
                         top_p=top_p,
                         temperature=temperature):
-                    progress = f'当前进度: {idx + 1 + rpi * len(chunks)}/{len(chunks) * repeat}'
+                    progress = f'正在阅读: [{filename} 第{idx}部分] 进度: {idx + 1 + rpi * len(chunks)}/{len(chunks) * repeat}'
                     chatbot[-1] = (utils.show_text(input_text) + f"\n---\n{memory}", utils.show_text(
                             f"{progress}\n{response}"))
                     # 显示文本

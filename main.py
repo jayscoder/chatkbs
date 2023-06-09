@@ -6,6 +6,8 @@ import kbs
 import os
 import embed_utils
 
+milvus_metric_type_options = ['L2', 'IP', 'HAMMING', 'JACCARD', 'TANIMOTO']
+
 
 def add_kbs_text(text):
     text_embedding = embed_utils.calculate_embedding(text)
@@ -80,8 +82,9 @@ def build_kbs_search():
                         stop_button = gr.Button("Stop")
             with gr.Column(scale=1):
                 clear_button = gr.Button("Clear History")
-                metric_type = gr.Textbox(
-                        label="Metric Type（L2, IP）",
+                metric_type = gr.Dropdown(
+                        choices=milvus_metric_type_options,
+                        label="Milvus Metric Type",
                         value='L2', lines=1).style(
                         container=False)
 

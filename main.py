@@ -161,7 +161,7 @@ def build_file_recursive_predict():
                         submit_button = gr.Button("Submit", variant="primary")
                         stop_button = gr.Button(value="Stop", variant='Danger')
             with gr.Column(scale=1):
-                emptyBtn = gr.Button("Clear History")
+                clear_button = gr.Button("Clear History")
 
                 chunk_size = gr.Slider(10, 4096,
                                        value=400,
@@ -201,7 +201,7 @@ def build_file_recursive_predict():
 
         submit_button.click(reset_user_input, [], [user_input])
         stop_button.click(fn=None, inputs=None, outputs=None, cancels=[submit_event])
-        emptyBtn.click(reset_state(2), outputs=[chatbot, history], show_progress=True)
+        clear_button.click(reset_state(2), outputs=[chatbot, history], show_progress=True)
 
 
 def build_chatglm():

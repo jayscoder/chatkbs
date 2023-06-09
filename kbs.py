@@ -258,7 +258,8 @@ def file_recursive_predict(
 
     memory = ''
     for rpi in range(repeat):
-        for filename, chunks in file_chunks:
+        for filename in file_chunks:
+            chunks = file_chunks[filename]
             for idx, chunk in enumerate(chunks):
                 prompt = f'当前上下文:\n{memory}\n---\n新的上下文片段:\n文件名={filename}\n{chunk}\n---\n根据用户关心的问题\"{input_text}\"，结合新的上下文片段，生成新的上下文：'
                 for response, history in chatai.stream_chat(

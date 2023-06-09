@@ -250,36 +250,47 @@ def file_recursive_predict(
     chatbot.append((utils.show_text(input_text), ""))
     yield chatbot, history
     file_chunks = { }
+    total_chunks = 0
+
     for file in files:
         text = utils.advanced_read_text(file.name)
         chunks = utils.text_to_chunks(text, size=chunk_size, overlap=chunk_overlap, limit=chunk_limit)
         filename = os.path.basename(file.name)
-        file_chunks[filename] = chunks
+        if len(chunks) > 0:
+            file_chunks[filename] = chunks
+            total_chunks += len(chunks)
 
+    total = total_chunks * repeat
+    progress_i = 0
     memory = ''
-    for rpi in range(repeat):
-        for filename in file_chunks:
-            chunks = file_chunks[filename]
-            for idx, chunk in enumerate(chunks):
-                prompt = f'当前上下文:\n{memory}\n---\n新的上下文片段:\n文件名={filename}\n{chunk}\n---\n根据用户关心的问题\"{input_text}\"，结合新的上下文片段，生成新的上下文：'
-                cache_memory = ''
-                for response, history in chatai.stream_chat(
-                        prompt,
-                        history=history,
-                        max_length=max_length,
-                        top_p=top_p,
-                        temperature=temperature):
-                    progress = f'正在阅读: [{filename} 第{idx}部分] 进度: {idx + 1 + rpi * len(chunks)}/{len(chunks) * repeat}'
-                    chatbot[-1] = (utils.show_text(input_text) + f"\n---\n{memory}", utils.show_text(
-                            f"{progress}\n{response}"))
-                    # 显示文本
-                    yield chatbot, history
-                    cache_memory = response
-                memory = cache_memory
+    if total > 1:
+        for rpi in range(repeat):
+            for filename in file_chunks:
+                chunks = file_chunks[filename]
+                for idx, chunk in enumerate(chunks):
+                    prompt = f'当前上下文:\n{memory}\n---\n新的上下文片段:\n文件名={filename}\n{chunk}\n---\n根据用户关心的问题\"{input_text}\"，结合新的上下文片段，生成新的上下文：'
+                    cache_memory = ''
+                    for response, history in chatai.stream_chat(
+                            prompt,
+                            history=history,
+                            max_length=max_length,
+                            top_p=top_p,
+                            temperature=temperature):
+                        progress = f'第{rpi}次阅读: [{filename} 第{idx}部分] 进度: {progress_i}/{total}'
+                        chatbot[-1] = (utils.show_text(input_text) + f"\n---\n{memory}", utils.show_text(
+                                f"{progress}\n{response}"))
+                        # 显示文本
+                        yield chatbot, history
+                        cache_memory = response
+                    memory = cache_memory
 
-                # 丢弃history的最后一项
-                history = history[:-1]
-                yield chatbot, history
+                    # 丢弃history的最后一项
+                    history = history[:-1]
+                    yield chatbot, history
+                    progress_i += 1
+    elif total == 1:
+        for filename in file_chunks:
+            memory = file_chunks[filename][0]
 
     prompt = f'上下文: {memory}\n---\n{input_text}'
 
@@ -311,8 +322,10 @@ def text_recursive_predict(
     yield chatbot, history
     chunks = utils.text_to_chunks(context_text, size=chunk_size, overlap=chunk_overlap, limit=chunk_limit)
 
-    if len(chunks) > 1:
-        memory = ''
+    total = len(chunks) * repeat
+    memory = ''
+
+    if total > 1:
         for rpi in range(repeat):
             for idx, chunk in enumerate(chunks):
                 prompt = f'当前上下文:\n{memory}\n---\n新的上下文片段:\n{chunk}\n---\n根据用户关心的问题\"{input_text}\"，结合新的上下文片段，生成新的上下文：'
@@ -334,7 +347,7 @@ def text_recursive_predict(
                 # 丢弃history的最后一项
                 history = history[:-1]
                 yield chatbot, history
-    else:
+    elif len(chunks) > 0:
         memory = chunks[0]
 
     prompt = f'上下文: {memory}\n---\n{input_text}'
@@ -348,4 +361,3 @@ def text_recursive_predict(
     ):
         chatbot[-1] = (utils.show_text(input_text), utils.show_text(response))
         yield chatbot, history
-

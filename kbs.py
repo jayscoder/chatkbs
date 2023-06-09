@@ -276,9 +276,9 @@ def file_recursive_predict(
                             max_length=max_length,
                             top_p=top_p,
                             temperature=temperature):
-                        progress = f'第{rpi}次阅读: [{filename} 第{idx}部分] 进度: {progress_i}/{total}'
+                        progress_text = f'第{rpi+1}次阅读: [{filename} 第{idx+1}部分] 进度: {progress_i}/{total}'
                         chatbot[-1] = (utils.show_text(input_text) + f"\n---\n{memory}", utils.show_text(
-                                f"{progress}\n{response}"))
+                                f"{progress_text}\n{response}"))
                         # 显示文本
                         yield chatbot, history
                         cache_memory = response
@@ -324,7 +324,7 @@ def text_recursive_predict(
 
     total = len(chunks) * repeat
     memory = ''
-
+    progress_i = 0
     if total > 1:
         for rpi in range(repeat):
             for idx, chunk in enumerate(chunks):
@@ -336,9 +336,9 @@ def text_recursive_predict(
                         max_length=max_length,
                         top_p=top_p,
                         temperature=temperature):
-                    progress = f'正在阅读: [第{idx}部分] 进度: {idx + 1 + rpi * len(chunks)}/{len(chunks) * repeat}'
+                    progress_text = f'第{rpi+1}次阅读: [第{idx+1}部分] 进度: {progress_i}/{total}'
                     chatbot[-1] = (utils.show_text(input_text) + f"\n---\n{memory}", utils.show_text(
-                            f"{progress}\n{response}"))
+                            f"{progress_text}\n{response}"))
                     # 显示文本
                     yield chatbot, history
                     cache_memory = response
@@ -347,6 +347,7 @@ def text_recursive_predict(
                 # 丢弃history的最后一项
                 history = history[:-1]
                 yield chatbot, history
+                progress_i += 1
     elif len(chunks) > 0:
         memory = chunks[0]
 

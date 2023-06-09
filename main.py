@@ -218,7 +218,7 @@ def build_file_recursive_predict():
 
 def build_text_recursive_predict():
     with gr.Tab("ChatGLM-6B-Text-Recursive"):
-        context_input = gr.Textbox(label='上下文', placeholder='输入上下文...').style(
+        context_input = gr.Textbox(label='上下文', placeholder='输入上下文...', lines=5).style(
                 container=False)
 
         chatbot = gr.Chatbot()

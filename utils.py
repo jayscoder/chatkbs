@@ -55,20 +55,20 @@ def text_to_sentences(text: str):
     return sentences
 
 
-def text_to_chunks(text: str, chunk_limit: int = 400):
+def text_to_chunks(text: str, limit: int = 400, overlap: int = 0):
     parts = []
     for line in text.split('\n'):
         line = line.strip()
         if line == '':
             continue
-        if len(line) < chunk_limit / 3:
+        if len(line) < limit / 10:
             parts.append(line)
             continue
 
         sentences = text_to_sentences(line)
 
         for sent in sentences:
-            if len(sent) < chunk_limit / 3:
+            if len(sent) < limit / 10:
                 parts.append(sent)
                 continue
 
@@ -79,15 +79,21 @@ def text_to_chunks(text: str, chunk_limit: int = 400):
 
     current_chunks = []
     current_chunk_length = 0
-    for idx, sentence in enumerate(parts):
-        current_chunks.append(sentence)
-        current_chunk_length += len(sentence)
-        if current_chunk_length > chunk_limit:
+
+    for idx, part in enumerate(parts):
+        current_chunks.append(part)
+        current_chunk_length += len(part)
+        if current_chunk_length > limit:
             chunk = ' '.join(current_chunks).strip()
             if len(chunk) > 0:
                 chunks.append(chunk)
+
             current_chunks = []
             current_chunk_length = 0
+
+            for oi in range(idx - overlap + 1, idx + 1):
+                current_chunks.append(parts[oi])
+                current_chunk_length += len(parts[oi])
 
     if current_chunk_length > 0:
         chunk = ' '.join(current_chunks).strip()

@@ -159,6 +159,7 @@ def build_file_recursive_predict():
                 with gr.Column(min_width=32, scale=1):
                     with gr.Column(scale=1):
                         submit_button = gr.Button("Submit", variant="primary")
+                    with gr.Column(scale=1):
                         stop_button = gr.Button(value="Stop", variant='Danger')
             with gr.Column(scale=1):
                 clear_button = gr.Button("Clear History")
@@ -215,6 +216,7 @@ def build_chatglm():
                 with gr.Column(min_width=32, scale=1):
                     with gr.Column(scale=1):
                         submit_button = gr.Button("Submit", variant="primary")
+                    with gr.Column(scale=1):
                         stop_button = gr.Button(value="Stop", variant='Danger')
             with gr.Column(scale=1):
                 emptyBtn = gr.Button("Clear History")

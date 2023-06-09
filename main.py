@@ -186,9 +186,9 @@ def build_file_recursive_predict():
                                         label="文件迭代阅读次数",
                                         interactive=True)
 
-                max_length = gr.Slider(0, 4096, value=2048, step=1.0, label="Maximum length", interactive=True)
-                top_p = gr.Slider(0, 1, value=0.7, step=0.01, label="Top P", interactive=True)
-                temperature = gr.Slider(0, 1, value=0.95, step=0.01, label="Temperature", interactive=True)
+                max_length = gr.Slider(0, 4096, value=2048, step=1.0, label="ChatGLM Maximum length", interactive=True)
+                top_p = gr.Slider(0, 1, value=0.7, step=0.01, label="ChatGLM Top P", interactive=True)
+                temperature = gr.Slider(0, 1, value=0.95, step=0.01, label="ChatGLM Temperature", interactive=True)
 
         history = gr.State([])
 

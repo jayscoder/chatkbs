@@ -127,7 +127,7 @@ def build_kbs_generate():
 
             with gr.Column(scale=1):
                 chunk_size = gr.Slider(10, 4096,
-                                       value=400,
+                                       value=1500,
                                        step=1.0,
                                        label="切块尺寸",
                                        interactive=True)
@@ -173,7 +173,7 @@ def build_file_recursive_predict():
                 clear_button = gr.Button("Clear History")
 
                 chunk_size = gr.Slider(10, 4096,
-                                       value=400,
+                                       value=1500,
                                        step=1.0,
                                        label="切块尺寸",
                                        interactive=True)
@@ -325,7 +325,7 @@ with gr.Blocks(title='ChatKBS') as demo:
     #     add_kbs_files_button = gr.Button("Add")
     #     add_kbs_files_button.click(add_kbs_files, inputs=[add_kbs_files_input], outputs=add_kbs_files_output)
 
-app, _, _ = demo.queue(concurrency_count=20, max_size=500).launch(
+app, _, _ = demo.queue(concurrency_count=30, max_size=500).launch(
         inbrowser=False,
         share=config.SHARE,
         auth=(config.USERNAME, config.PASSWORD),

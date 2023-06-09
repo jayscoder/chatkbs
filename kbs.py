@@ -292,3 +292,56 @@ def file_recursive_predict(
     ):
         chatbot[-1] = (utils.show_text(input_text), utils.show_text(response))
         yield chatbot, history
+
+
+def text_recursive_predict(
+        context_text,
+        input_text,
+        chatbot,
+        chunk_size: int,
+        chunk_overlap: int,
+        chunk_limit: int,
+        repeat: int,
+        max_length,
+        top_p,
+        temperature,
+        history,
+):
+    chatbot.append((utils.show_text(input_text), ""))
+    yield chatbot, history
+    chunks = utils.text_to_chunks(context_text, size=chunk_size, overlap=chunk_overlap, limit=chunk_limit)
+
+    memory = ''
+    for rpi in range(repeat):
+        for idx, chunk in enumerate(chunks):
+            prompt = f'当前上下文:\n{memory}\n---\n新的上下文片段:\n{chunk}\n---\n根据用户关心的问题\"{input_text}\"，结合新的上下文片段，生成新的上下文：'
+            cache_memory = ''
+            for response, history in chatai.stream_chat(
+                    prompt,
+                    history=history,
+                    max_length=max_length,
+                    top_p=top_p,
+                    temperature=temperature):
+                progress = f'正在阅读: [第{idx}部分] 进度: {idx + 1 + rpi * len(chunks)}/{len(chunks) * repeat}'
+                chatbot[-1] = (utils.show_text(input_text) + f"\n---\n{memory}", utils.show_text(
+                        f"{progress}\n{response}"))
+                # 显示文本
+                yield chatbot, history
+                cache_memory = response
+            memory = cache_memory
+
+            # 丢弃history的最后一项
+            history = history[:-1]
+            yield chatbot, history
+
+    prompt = f'上下文: {memory}\n---\n{input_text}'
+
+    for response, history in chatai.stream_chat(
+            prompt,
+            history=history,
+            max_length=max_length,
+            top_p=top_p,
+            temperature=temperature
+    ):
+        chatbot[-1] = (utils.show_text(input_text), utils.show_text(response))
+        yield chatbot, history

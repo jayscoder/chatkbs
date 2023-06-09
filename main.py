@@ -59,7 +59,7 @@ def reset_user_input():
 
 
 def build_kbs_search():
-    with gr.Tab('知识库检索Beta'):
+    with gr.Tab('知识库检索Todo'):
         filename_fuzzy_match = gr.Textbox(
                 show_label=False,
                 placeholder='文件名模糊搜索...',
@@ -116,7 +116,7 @@ def build_kbs_search():
 
 
 def build_kbs_generate():
-    with gr.Tab('知识库生成Beta'):
+    with gr.Tab('知识库生成Todo'):
         with gr.Row():
             with gr.Column(scale=4):
                 generate_kbs_text_output = gr.Textbox(label='Output')
@@ -206,6 +206,67 @@ def build_file_recursive_predict():
 
         submit_event = submit_button.click(kbs.file_recursive_predict,
                                            [files_input, user_input, chatbot, chunk_size, chunk_overlap, chunk_limit,
+                                            file_repeat,
+                                            max_length, top_p, temperature, history],
+                                           [chatbot, history],
+                                           show_progress=True)
+
+        submit_button.click(reset_user_input, [], [user_input])
+        stop_button.click(fn=None, inputs=None, outputs=None, cancels=[submit_event])
+        clear_button.click(reset_state(2), outputs=[chatbot, history], show_progress=True)
+
+
+def build_text_recursive_predict():
+    with gr.Tab("ChatGLM-6B-Text-Recursive"):
+        context_input = gr.Textbox(label='上下文', placeholder='输入上下文...').style(
+                container=False)
+
+        chatbot = gr.Chatbot()
+        with gr.Row():
+            with gr.Column(scale=4):
+                with gr.Column(scale=12):
+                    user_input = gr.Textbox(show_label=False, placeholder="Input...", lines=10).style(
+                            container=False)
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        submit_button = gr.Button("Submit", variant="primary")
+                    with gr.Column(scale=1):
+                        stop_button = gr.Button("Stop")
+
+            with gr.Column(scale=1):
+                clear_button = gr.Button("Clear History")
+
+                chunk_size = gr.Slider(10, 4096,
+                                       value=1500,
+                                       step=1.0,
+                                       label="切块尺寸",
+                                       interactive=True)
+
+                chunk_overlap = gr.Slider(0, 10,
+                                          value=0,
+                                          step=1.0,
+                                          label="切块重叠，（1块重叠表示切块尺寸的1/10）",
+                                          interactive=True)
+                chunk_limit = gr.Slider(1, 10000,
+                                        value=100,
+                                        step=1.0,
+                                        label="最大切块数量",
+                                        interactive=True)
+
+                file_repeat = gr.Slider(1, 10,
+                                        value=1,
+                                        step=1.0,
+                                        label="文件迭代阅读次数",
+                                        interactive=True)
+
+                max_length = gr.Slider(0, 4096, value=2048, step=1.0, label="ChatGLM Maximum length", interactive=True)
+                top_p = gr.Slider(0, 1, value=0.7, step=0.01, label="ChatGLM Top P", interactive=True)
+                temperature = gr.Slider(0, 1, value=0.95, step=0.01, label="ChatGLM Temperature", interactive=True)
+
+        history = gr.State([])
+
+        submit_event = submit_button.click(kbs.text_recursive_predict,
+                                           [context_input, user_input, chatbot, chunk_size, chunk_overlap, chunk_limit,
                                             file_repeat,
                                             max_length, top_p, temperature, history],
                                            [chatbot, history],
@@ -308,7 +369,9 @@ with gr.Blocks(title='ChatKBS') as demo:
     # with gr.Tab('知识库问答'):
     #     pass
 
+    build_text_recursive_predict()
     build_file_recursive_predict()
+
     build_chatglm()
     build_pdf2text()
 

@@ -4,10 +4,9 @@ import utils
 import json
 import kbs
 import os
-
+import embed_utils
 
 def add_kbs_text(text):
-    import embed_utils
     text_embedding = embed_utils.calculate_embedding(text)
     md5 = utils.calculate_md5(text)
     chunks = utils.text_to_chunks(text)

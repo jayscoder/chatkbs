@@ -12,6 +12,110 @@ nltk.download('punkt')
 nltk.download('stopwords')
 
 
+# 判断一个字符是否是中文
+def is_character_chinese(ch):
+    if '\u4e00' <= ch <= '\u9fff':
+        return True
+    return False
+
+
+# 要判断一个字符是否属于中文、英文或数字中的一个
+def is_character_valid(character):
+    if character.isnumeric() or character.isalpha():
+        return True
+    elif '\u4e00' <= character <= '\u9fff':
+        return True
+    else:
+        return False
+
+
+# 是否是图例标注
+def is_label_number_format(text):
+    pattern = r'^[图表式注引]\.*\s*\d+|^Fig\.?\d+|^Figure\.?\s*\d+|^Table\.?\s*\d+|^Equation\.?\s*\d+|^Equ\.?\s*\d+'
+    pattern = re.compile(pattern, re.IGNORECASE)
+    match = re.match(pattern, text)
+    if match:
+        return True
+    else:
+        return False
+
+
+def fix_newlines(text):
+    lines = text.split('\n')
+    fixed_lines = []
+    for idx, line in enumerate(lines):
+        if line.strip() == '':
+            fixed_lines.append(line)
+            continue
+        if idx == 0:
+            fixed_lines.append(line)
+            continue
+        if line[0] == ' ':
+            # 第一个字符是空格，视为新的一行
+            fixed_lines.append(line)
+            continue
+
+        if is_label_number_format(line):
+            # 图例标注
+            # 另起一行
+            fixed_lines.append(line)
+            continue
+
+        last_line = lines[idx - 1].strip()
+        if last_line != '':
+            last_ch = last_line[-1]
+            if last_ch in r',，\/-——~～+=*^&%$#@[<《“、':
+                # 错误的换行符
+                fixed_lines[-1] += line
+                continue
+
+            if last_ch in ':："\'':
+                # 错误的换行符
+                fixed_lines[-1] += ' ' + line
+                continue
+
+            if last_ch in '\n。.！!？?；;:：……)]”':
+                # 另起一行
+                fixed_lines.append(line)
+                continue
+
+            if is_character_valid(last_ch):
+                # 错误的换行符
+                fixed_lines[-1] += line
+                continue
+
+        fixed_lines.append(line)
+
+    # 将文本连接成正确的格式
+    fixed_text = '\n'.join(fixed_lines)
+    fixed_text = fixed_text.replace('\n\n', '\n')
+    return fixed_text
+
+
+# 替换掉错误的空格
+# 例子：（其采 用 的 主 要 决 策 算 法 是 基 于）
+def fix_error_space(text):
+    fixed_text = ''
+    # 将连续2个以上的空格替换掉
+    text = re.sub(r' {2,}', ' ', text)
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if i >= len(text) - 2:
+            fixed_text += ch
+            i += 1
+            continue
+
+        if ch == ' ' and text[i + 1] != ' ' and text[i + 2] == ' ':
+            if is_character_chinese(text[i + 1]):
+                # 中间的是中文，前后是空格
+                fixed_text += text[i + 1]
+                i = i + 2
+                continue
+        fixed_text += ch
+        i += 1
+    return fixed_text.strip()
+
 # 将全角字符替换为半角字符
 def replace_fullwidth_chars(text):
     # 创建一个空字符串来存储替换后的文本
@@ -146,8 +250,9 @@ def html_to_text(path: str):
 
 def text_preprocess(text: str):
     text = replace_fullwidth_chars(text)
+    text = fix_newlines(text)
+    text = fix_error_space(text)
     text = re.sub('\n{2,}', '\n', text)
-    text = re.sub(' {2,}', ' ', text)
     return text
 
 
@@ -167,6 +272,7 @@ def advanced_read_text(filepath: str) -> str:
             except:
                 file_text = ''
     file_text = text_preprocess(file_text)
+
     return file_text
 
 

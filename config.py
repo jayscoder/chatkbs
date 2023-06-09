@@ -11,8 +11,8 @@ parser.add_argument('--share', action='store_true', help='是否用Gradio共享�
 
 args = parser.parse_args()
 
-VERSION_NAME = '1.0.3'
-VERSION_CODE = 4
+VERSION_NAME = '1.0.4'
+VERSION_CODE = 5
 
 # 获取当前工作目录的绝对路径
 BASE_DIR = os.getcwd()

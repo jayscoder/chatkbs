@@ -81,7 +81,7 @@ def build_search():
                         label="Metric Type（L2, IP）",
                         value='L2', lines=1).style(
                         container=False)
-                
+
                 file_limit = gr.Slider(0, 100, value=3, step=1.0, label="Search File Limit",
                                        interactive=True)
                 chunk_limit = gr.Slider(0, 100, value=3, step=1.0, label="Search Chunk Limit",

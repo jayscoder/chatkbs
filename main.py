@@ -6,6 +6,7 @@ import kbs
 import os
 import embed_utils
 
+
 def add_kbs_text(text):
     text_embedding = embed_utils.calculate_embedding(text)
     md5 = utils.calculate_md5(text)
@@ -56,7 +57,7 @@ def reset_user_input():
 
 
 def build_search():
-    with gr.Tab('知识库检索'):
+    with gr.Tab('知识库检索Beta'):
         filename_fuzzy_match = gr.Textbox(show_label=False, placeholder='文件名模糊搜索...', lines=1).style(
                 container=False)
 
@@ -105,7 +106,7 @@ def build_search():
 
 
 def build_generate():
-    with gr.Tab('知识库生成'):
+    with gr.Tab('知识库生成Beta'):
         with gr.Row():
             with gr.Column(scale=4):
                 generate_kbs_text_output = gr.Textbox(label='Output')
@@ -140,6 +141,66 @@ def build_generate():
                            show_progress=True)
 
 
+def build_file_recursive_predict():
+    with gr.Tab("ChatGLM-6B-File-Recursive"):
+        files_input = gr.Files(label='Upload your PDF/Txt/Markdown here',
+                               file_types=['.pdf', '.txt', '.md', '.py', '.html', '.js', '.java', '.h', '.cpp', '.c',
+                                           '.hpp', '.json', '.toml', '.ipynb', '.yml'])
+
+        chatbot = gr.Chatbot()
+        with gr.Row():
+            with gr.Column(scale=4):
+                with gr.Column(scale=12):
+                    user_input = gr.Textbox(show_label=False, placeholder="Input...", lines=10).style(
+                            container=False)
+                with gr.Column(min_width=32, scale=1):
+                    with gr.Column(scale=1):
+                        submit_button = gr.Button("Submit", variant="primary")
+                        stop_button = gr.Button(value="Stop", variant='Danger')
+            with gr.Column(scale=1):
+                emptyBtn = gr.Button("Clear History")
+
+                chunk_size = gr.Slider(10, 4096,
+                                       value=400,
+                                       step=1.0,
+                                       label="切块尺寸",
+                                       interactive=True)
+
+                chunk_overlap = gr.Slider(0, 10,
+                                          value=0,
+                                          step=1.0,
+                                          label="切块重叠，（1块重叠表示切块尺寸的1/10）",
+                                          interactive=True)
+                chunk_limit = gr.Slider(1, 10000,
+                                        value=100,
+                                        step=1.0,
+                                        label="最大切块数量",
+                                        interactive=True)
+
+                file_repeat = gr.Slider(1, 10,
+                                        value=1,
+                                        step=1.0,
+                                        label="文件迭代阅读次数",
+                                        interactive=True)
+
+                max_length = gr.Slider(0, 4096, value=2048, step=1.0, label="Maximum length", interactive=True)
+                top_p = gr.Slider(0, 1, value=0.7, step=0.01, label="Top P", interactive=True)
+                temperature = gr.Slider(0, 1, value=0.95, step=0.01, label="Temperature", interactive=True)
+
+        history = gr.State([])
+
+        submit_event = submit_button.click(kbs.file_recursive_predict,
+                                           [files_input, user_input, chatbot, chunk_size, chunk_overlap, chunk_limit,
+                                            file_repeat,
+                                            max_length, top_p, temperature, history],
+                                           [chatbot, history],
+                                           show_progress=True)
+
+        submit_button.click(reset_user_input, [], [user_input])
+        stop_button.click(fn=None, inputs=None, outputs=None, cancels=[submit_event])
+        emptyBtn.click(reset_state(2), outputs=[chatbot, history], show_progress=True)
+
+
 def build_chatglm():
     with gr.Tab("ChatGLM-6B"):
         chatbot = gr.Chatbot()
@@ -149,7 +210,9 @@ def build_chatglm():
                     user_input = gr.Textbox(show_label=False, placeholder="Input...", lines=10).style(
                             container=False)
                 with gr.Column(min_width=32, scale=1):
-                    submitBtn = gr.Button("Submit", variant="primary")
+                    with gr.Column(scale=1):
+                        submit_button = gr.Button("Submit", variant="primary")
+                        stop_button = gr.Button(value="Stop", variant='Danger')
             with gr.Column(scale=1):
                 emptyBtn = gr.Button("Clear History")
                 max_length = gr.Slider(0, 4096, value=2048, step=1.0, label="Maximum length", interactive=True)
@@ -158,12 +221,13 @@ def build_chatglm():
 
         history = gr.State([])
 
-        submitBtn.click(kbs.glm_predict, [user_input, chatbot, max_length, top_p, temperature, history],
-                        [chatbot, history],
-                        show_progress=True)
+        submit_event = submit_button.click(kbs.glm_predict,
+                                           [user_input, chatbot, max_length, top_p, temperature, history],
+                                           [chatbot, history],
+                                           show_progress=True)
 
-        submitBtn.click(reset_user_input, [], [user_input])
-
+        submit_button.click(reset_user_input, [], [user_input])
+        stop_button.click(fn=None, inputs=None, outputs=None, cancels=[submit_event])
         emptyBtn.click(reset_state(2), outputs=[chatbot, history], show_progress=True)
 
 
@@ -228,11 +292,14 @@ with gr.Blocks(title='ChatKBS') as demo:
     # with gr.Tab('知识库问答'):
     #     pass
 
-    build_search()
-    build_generate()
+    build_file_recursive_predict()
     build_chatglm()
-    build_calculate_embedding()
     build_pdf2text()
+
+    build_generate()
+    build_search()
+    build_calculate_embedding()
+
     # with gr.Tab('输入知识'):
     #     add_kbs_text_input = gr.Textbox(label='输入知识')
     #     add_kbs_text_output = gr.Textbox(label='结果')

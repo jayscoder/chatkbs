@@ -223,7 +223,71 @@ def search_kbs(filename_fuzzy_match: str,
 
 def glm_predict(input_text, chatbot, max_length, top_p, temperature, history):
     chatbot.append((utils.show_text(input_text), ""))
-    for response, history in chatai.stream_chat(input_text, history, max_length=max_length, top_p=top_p,
-                                                temperature=temperature):
+    yield chatbot, history
+    for response, history in chatai.stream_chat(
+            input_text,
+            history=history,
+            max_length=max_length,
+            top_p=top_p,
+            temperature=temperature):
         chatbot[-1] = (utils.show_text(input_text), utils.show_text(response))
         yield chatbot, history
+
+
+def file_recursive_predict(
+        files,
+        input_text,
+        chatbot,
+        chunk_size: int,
+        chunk_overlap: int,
+        chunk_limit: int,
+        repeat: int,
+        max_length,
+        top_p,
+        temperature,
+        history,
+):
+    chatbot.append((utils.show_text(input_text), ""))
+    yield chatbot, history
+    file_chunks = { }
+    for file in files:
+        text = utils.advanced_read_text(file.name)
+        chunks = utils.text_to_chunks(text, size=chunk_size, overlap=chunk_overlap, limit=chunk_limit)
+        filename = os.path.basename(file.name)
+        file_chunks[filename] = chunks
+
+    memory = ''
+    for rpi in range(repeat):
+        for filename, chunks in file_chunks:
+            for idx, chunk in enumerate(chunks):
+                prompt = f'当前上下文:\n{memory}\n---\n新的上下文片段:\n文件名={filename}\n{chunk}\n---\n根据用户关心的问题\"{input_text}\"，结合新的上下文片段，生成新的上下文：'
+                for response, history in chatai.stream_chat(
+                        prompt,
+                        history=history,
+                        max_length=max_length,
+                        top_p=top_p,
+                        temperature=temperature):
+                    progress = f'当前进度: {idx + 1 + rpi * len(chunks)}/{len(chunks) * repeat}'
+                    print(progress)
+                    chatbot[-1] = (utils.show_text(input_text), utils.show_text(
+                            f"{progress}\n{response}"))
+                    # 显示文本
+                    memory = response
+                    yield chatbot, history
+
+                # 丢弃history的最后一项
+                history = history[:-1]
+                yield chatbot, history
+
+    prompt = f'上下文: {memory}\n---\n{input_text}'
+
+    for response, history in chatai.stream_chat(
+            prompt,
+            history=history,
+            max_length=max_length,
+            top_p=top_p,
+            temperature=temperature
+    ):
+        chatbot[-1] = (utils.show_text(input_text), utils.show_text(response))
+        yield chatbot, history
+

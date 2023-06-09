@@ -53,10 +53,14 @@ sudo docker compose up -d
 
 ### 1.4 运行
 
-可以根据自己的需要修改config.py里的部分参数
-
 ```shell
 python main.py
+
+# 如需指定使用第n个cuda
+python main.py --cuda=1
+
+# 获取命令行参数帮助
+python main.py --help
 ```
 
 ## Milvus运行介绍
@@ -93,7 +97,7 @@ Stop Milvus
 To stop Milvus standalone, run:
 
 ```shell
-sudo docker-compose down
+sudo docker compose down
 ```
 
 To delete data after stopping Milvus, run:

@@ -56,7 +56,7 @@ def reset_user_input():
     return gr.update(value='')
 
 
-def build_search():
+def build_kbs_search():
     with gr.Tab('知识库检索Beta'):
         filename_fuzzy_match = gr.Textbox(
                 show_label=False,
@@ -108,16 +108,17 @@ def build_search():
         clear_button.click(reset_state(1), outputs=[search_chatbot], show_progress=True)
 
 
-def build_generate():
+def build_kbs_generate():
     with gr.Tab('知识库生成Beta'):
         with gr.Row():
             with gr.Column(scale=4):
                 generate_kbs_text_output = gr.Textbox(label='Output')
-                with gr.Column(scale=4):
-                    update_button = gr.Button('更新')
-
-                with gr.Column(scale=4):
-                    reset_button = gr.Button('重置')
+                with gr.Column(scale=1):
+                    update_button = gr.Button('Update')
+                with gr.Column(scale=1):
+                    reset_button = gr.Button('Reset')
+                with gr.Column(scale=1):
+                    stop_button = gr.Button('Stop')
 
             with gr.Column(scale=1):
                 chunk_size = gr.Slider(10, 4096,
@@ -136,12 +137,13 @@ def build_generate():
                                         label="最大切块数量",
                                         interactive=True)
 
-        update_button.click(kbs.generate_kbs, inputs=[chunk_size, chunk_overlap, chunk_limit],
-                            outputs=generate_kbs_text_output,
-                            show_progress=True)
-        reset_button.click(kbs.rebuild_kbs, inputs=[chunk_size, chunk_overlap, chunk_limit],
-                           outputs=generate_kbs_text_output,
-                           show_progress=True)
+        update_event = update_button.click(kbs.generate_kbs, inputs=[chunk_size, chunk_overlap, chunk_limit],
+                                           outputs=generate_kbs_text_output,
+                                           show_progress=True)
+        reset_event = reset_button.click(kbs.rebuild_kbs, inputs=[chunk_size, chunk_overlap, chunk_limit],
+                                         outputs=generate_kbs_text_output,
+                                         show_progress=True)
+        stop_button.click(fn=None, inputs=None, outputs=None, cancels=[update_event, reset_event])
 
 
 def build_file_recursive_predict():
@@ -301,8 +303,8 @@ with gr.Blocks(title='ChatKBS') as demo:
     build_chatglm()
     build_pdf2text()
 
-    build_generate()
-    build_search()
+    build_kbs_generate()
+    build_kbs_search()
     build_calculate_embedding()
 
     # with gr.Tab('输入知识'):

@@ -262,6 +262,7 @@ def file_recursive_predict(
             chunks = file_chunks[filename]
             for idx, chunk in enumerate(chunks):
                 prompt = f'当前上下文:\n{memory}\n---\n新的上下文片段:\n文件名={filename}\n{chunk}\n---\n根据用户关心的问题\"{input_text}\"，结合新的上下文片段，生成新的上下文：'
+                cache_memory = ''
                 for response, history in chatai.stream_chat(
                         prompt,
                         history=history,
@@ -269,12 +270,12 @@ def file_recursive_predict(
                         top_p=top_p,
                         temperature=temperature):
                     progress = f'当前进度: {idx + 1 + rpi * len(chunks)}/{len(chunks) * repeat}'
-                    print(progress)
-                    chatbot[-1] = (utils.show_text(input_text), utils.show_text(
+                    chatbot[-1] = (utils.show_text(input_text) + f"\n---\n{memory}", utils.show_text(
                             f"{progress}\n{response}"))
                     # 显示文本
-                    memory = response
                     yield chatbot, history
+                    cache_memory = response
+                memory = cache_memory
 
                 # 丢弃history的最后一项
                 history = history[:-1]
@@ -291,4 +292,3 @@ def file_recursive_predict(
     ):
         chatbot[-1] = (utils.show_text(input_text), utils.show_text(response))
         yield chatbot, history
-

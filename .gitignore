@@ -165,3 +165,5 @@ data/*
 
 database*.db
 THUDM/chatglm-6b/*
+
+tmp

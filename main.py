@@ -7,7 +7,8 @@ import os
 
 
 def add_kbs_text(text):
-    text_embedding = utils.text_embedding(text)
+    import embed_utils
+    text_embedding = embed_utils.calculate_embedding(text)
     md5 = utils.calculate_md5(text)
     chunks = utils.text_to_chunks(text)
     info = {
@@ -72,6 +73,12 @@ def build_search():
                     submit_button = gr.Button("Submit", variant="primary")
             with gr.Column(scale=1):
                 clear_button = gr.Button("Clear History")
+                metric_type = gr.Textbox(
+                        show_label=False,
+                        value='L2',
+                        placeholder="Metric Type（L2, IP）", lines=1).style(
+                        container=False)
+
                 file_limit = gr.Slider(0, 100, value=3, step=1.0, label="Search File Limit",
                                        interactive=True)
                 chunk_limit = gr.Slider(0, 100, value=3, step=1.0, label="Search Chunk Limit",
@@ -88,6 +95,7 @@ def build_search():
                                     search_chatbot,
                                     file_limit,
                                     chunk_limit,
+                                    metric_type,
                                     glm_max_length,
                                     glm_top_p,
                                     glm_temperature],
@@ -109,14 +117,27 @@ def build_generate():
                     reset_button = gr.Button('重置')
 
             with gr.Column(scale=1):
-                chunk_limit = gr.Slider(10, 4096,
-                                        value=400,
+                chunk_size = gr.Slider(10, 4096,
+                                       value=400,
+                                       step=1.0,
+                                       label="切块尺寸",
+                                       interactive=True)
+                chunk_overlap = gr.Slider(0, 10,
+                                          value=0,
+                                          step=1.0,
+                                          label="切块重叠，（1块重叠表示切块尺寸的1/10）",
+                                          interactive=True)
+                chunk_limit = gr.Slider(1, 10000,
+                                        value=100,
                                         step=1.0,
-                                        label="切块尺寸",
+                                        label="最大切块数量",
                                         interactive=True)
-        update_button.click(kbs.generate_kbs, inputs=[chunk_limit], outputs=generate_kbs_text_output,
+
+        update_button.click(kbs.generate_kbs, inputs=[chunk_size, chunk_overlap, chunk_limit],
+                            outputs=generate_kbs_text_output,
                             show_progress=True)
-        reset_button.click(kbs.rebuild_kbs, inputs=[chunk_limit], outputs=generate_kbs_text_output,
+        reset_button.click(kbs.rebuild_kbs, inputs=[chunk_size, chunk_overlap, chunk_limit],
+                           outputs=generate_kbs_text_output,
                            show_progress=True)
 
 
@@ -150,8 +171,9 @@ def build_chatglm():
 def build_calculate_embedding():
     import numpy as np
     def chat_embedding(text1, text2):
-        em1 = utils.text_embedding(text1)
-        em2 = utils.text_embedding(text2)
+        import embed_utils
+        em1 = embed_utils.calculate_embedding(text1)
+        em2 = embed_utils.calculate_embedding(text2)
         em1_np = np.array(em1)
         em2_np = np.array(em2)
         l2_distance = np.linalg.norm(em1_np - em2_np)

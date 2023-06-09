@@ -12,12 +12,12 @@ import db_milvus
 import chatai
 
 
-def rebuild_kbs(chunk_limit: int):
+def rebuild_kbs(chunk_size: int, chunk_overlap: int, chunk_limit: int):
     db_utils.rebuild()
-    yield from generate_kbs(chunk_limit=chunk_limit)
+    yield from generate_kbs(chunk_size=chunk_size, chunk_overlap=chunk_overlap, chunk_limit=chunk_limit)
 
 
-def generate_kbs(chunk_limit: int):
+def generate_kbs(chunk_size: int, chunk_overlap: int, chunk_limit: int):
     new_filenames = utils.list_files(config.DATA_DIR)
 
     outputs = f'{config.DATA_DIR}中共有{len(new_filenames)}个文件: '
@@ -54,6 +54,7 @@ def generate_kbs(chunk_limit: int):
 
         for idx, filename in enumerate(merged_list):
             for output in generate_kbs_file(root=config.DATA_DIR, filename=filename, old_md5=old_file_md5[filename],
+                                            chunk_size=chunk_size, chunk_overlap=chunk_overlap,
                                             chunk_limit=chunk_limit):
                 outputs[idx + 1] = f'[{idx + 1}/{total}] {filename}: {output}'
                 yield '\n'.join(outputs)
@@ -62,7 +63,15 @@ def generate_kbs(chunk_limit: int):
         yield '\n'.join(outputs)
 
 
-def generate_kbs_file(root: str, filename: str, old_md5: str, chunk_limit: int) -> str:
+def generate_kbs_file(
+        root: str,
+        filename: str,
+        old_md5: str,
+        chunk_size: int,
+        chunk_overlap: int,
+        chunk_limit: int) -> str:
+    import embed_utils
+
     filepath = os.path.join(root, filename)
 
     filename_md5 = utils.calculate_md5(filename)
@@ -87,7 +96,7 @@ def generate_kbs_file(root: str, filename: str, old_md5: str, chunk_limit: int) 
 
         yield f'字符数={file_raw_text_length}'
 
-        file_text_embedding = utils.text_embedding(file_full_text)
+        file_text_embedding = embed_utils.calculate_embedding(file_full_text)
 
         filetype = ext.replace('.', '')
         # 获取当前的13位时间戳（以毫秒为单位）
@@ -110,12 +119,12 @@ def generate_kbs_file(root: str, filename: str, old_md5: str, chunk_limit: int) 
                 embedding=file_text_embedding
         )
 
-        chunks = utils.text_to_chunks(file_raw_text)
+        chunks = utils.text_to_chunks(file_raw_text, size=chunk_size, overlap=chunk_overlap, limit=chunk_limit)
         for no, chunk in enumerate(chunks):
             chunk_full_text = f'文件 {filename} 第{no}部分\n' + chunk
 
             chunk_md5 = utils.calculate_md5(chunk_full_text)
-            chunk_embedding = utils.text_embedding(chunk_full_text)
+            chunk_embedding = embed_utils.calculate_embedding(chunk_full_text)
 
             sql = '''INSERT OR REPLACE INTO kbs_chunk (filename_md5, filename_md5_no, chunk, chunk_no, chunk_length, summary, filename, create_time, embedding, chunk_md5, update_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -155,15 +164,18 @@ def search_kbs(filename_fuzzy_match: str,
                search_input: str,
                chatbot: list[tuple[str, str]],
                search_file_limit: int,
-               search_chunk_limit: int,
+               search_chunk_limit: int, chunk_limit: int,
+               search_metric_type: str,
                glm_max_length: int,
                glm_top_p: float,
                glm_temperature: float):
-    print(f'search_file_limit={search_file_limit} search_chunk_limit={search_chunk_limit}')
+    import embed_utils
+    print(
+            f'search_file_limit={search_file_limit} search_chunk_limit={search_chunk_limit} search_metric_type={search_metric_type}')
     chatbot[:] = []
     chatbot.append((utils.show_text(search_input), ""))
 
-    search_embedding = utils.text_embedding(search_input)
+    search_embedding = embed_utils.calculate_embedding(search_input)
     db_milvus.kbs_chunk_milvus.load()
     db_milvus.kbs_file_milvus.load()
 
@@ -172,7 +184,10 @@ def search_kbs(filename_fuzzy_match: str,
 
         if search_file_limit > 0:
             # 先查询可能的文件
-            filename_md5_list = db_milvus.file_search(embedding=search_embedding, limit=search_file_limit)
+            filename_md5_list = db_milvus.file_search(
+                    embedding=search_embedding,
+                    limit=search_file_limit,
+                    metric_type=search_metric_type)
 
             # 构建逗号分隔的参数字符串
             results = cursor.execute(
@@ -187,7 +202,10 @@ def search_kbs(filename_fuzzy_match: str,
 
         if search_chunk_limit > 0:
             # 搜索chunk
-            filename_md5_no_list = db_milvus.chunk_search(embedding=search_embedding, limit=search_chunk_limit)
+            filename_md5_no_list = db_milvus.chunk_search(
+                    embedding=search_embedding,
+                    limit=search_chunk_limit,
+                    metric_type=search_metric_type)
             results = cursor.execute(
                     f'SELECT filename, chunk_no, chunk FROM kbs_chunk WHERE kbs_chunk.filename_md5_no IN ({db_utils.que_marks(len(filename_md5_no_list))})',
                     filename_md5_no_list).fetchall()

@@ -1,19 +1,38 @@
-import tensorflow_hub as hub
 import hashlib
 import nltk
 import os
 import fitz
 import re
 from bs4 import BeautifulSoup
+import unicodedata
 
-embed = hub.load("https://wangtong15.oss-cn-beijing.aliyuncs.com/models/universal-sentence-encoder_4.tar.gz")
+_EMBED = None
 
 nltk.download('punkt')
 nltk.download('stopwords')
 
 
-def text_embedding(text: str) -> list[float]:
-    return embed([text]).numpy().tolist()[0]
+# 将全角字符替换为半角字符
+def replace_fullwidth_chars(text):
+    # 创建一个空字符串来存储替换后的文本
+    replaced_text = ""
+    pattern = '[\u3000]+'
+    text = re.sub(pattern, ' ', text)
+    # 遍历字符串中的每个字符
+    for char in text:
+        # 获取字符的Unicode名称
+        name = unicodedata.name(char, "")
+
+        # 检查字符是否是全角字符
+        if "FULLWIDTH" in name:
+            # 获取全角字符的对应半角字符
+            halfwidth_char = unicodedata.normalize('NFKC', char)
+            replaced_text += halfwidth_char
+        else:
+            # 如果字符不是全角字符，则直接添加到替换后的文本中
+            replaced_text += char
+
+    return replaced_text
 
 
 def calculate_md5(text: str) -> str:
@@ -55,20 +74,20 @@ def text_to_sentences(text: str):
     return sentences
 
 
-def text_to_chunks(text: str, limit: int = 400, overlap: int = 0):
+def text_to_chunks(text: str, size: int = 400, overlap: int = 0, limit: int = 100):
     parts = []
     for line in text.split('\n'):
         line = line.strip()
         if line == '':
             continue
-        if len(line) < limit / 10:
+        if len(line) < size / 10:
             parts.append(line)
             continue
 
         sentences = text_to_sentences(line)
 
         for sent in sentences:
-            if len(sent) < limit / 10:
+            if len(sent) < size / 10:
                 parts.append(sent)
                 continue
 
@@ -83,10 +102,12 @@ def text_to_chunks(text: str, limit: int = 400, overlap: int = 0):
     for idx, part in enumerate(parts):
         current_chunks.append(part)
         current_chunk_length += len(part)
-        if current_chunk_length > limit:
+        if current_chunk_length > size:
             chunk = ' '.join(current_chunks).strip()
             if len(chunk) > 0:
                 chunks.append(chunk)
+                if len(chunks) >= limit:
+                    return chunks
 
             current_chunks = []
             current_chunk_length = 0
@@ -124,6 +145,7 @@ def html_to_text(path: str):
 
 
 def text_preprocess(text: str):
+    text = replace_fullwidth_chars(text)
     text = re.sub('\n{2,}', '\n', text)
     text = re.sub(' {2,}', ' ', text)
     return text

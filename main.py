@@ -325,7 +325,7 @@ with gr.Blocks(title='ChatKBS') as demo:
     #     add_kbs_files_button = gr.Button("Add")
     #     add_kbs_files_button.click(add_kbs_files, inputs=[add_kbs_files_input], outputs=add_kbs_files_output)
 
-app, _, _ = demo.queue(concurrency_count=7, max_size=500).launch(
+app, _, _ = demo.queue(concurrency_count=20, max_size=500).launch(
         inbrowser=False,
         share=config.SHARE,
         auth=(config.USERNAME, config.PASSWORD),

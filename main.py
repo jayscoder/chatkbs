@@ -58,7 +58,11 @@ def reset_user_input():
 
 def build_search():
     with gr.Tab('知识库检索Beta'):
-        filename_fuzzy_match = gr.Textbox(show_label=False, placeholder='文件名模糊搜索...', lines=1).style(
+        filename_fuzzy_match = gr.Textbox(
+                show_label=False,
+                placeholder='文件名模糊搜索...',
+                lines=1,
+                visible=False).style(
                 container=False)
 
         search_chatbot = gr.Chatbot()
@@ -74,11 +78,10 @@ def build_search():
             with gr.Column(scale=1):
                 clear_button = gr.Button("Clear History")
                 metric_type = gr.Textbox(
-                        show_label=False,
-                        value='L2',
-                        placeholder="Metric Type（L2, IP）", lines=1).style(
+                        label="Metric Type（L2, IP）",
+                        value='L2', lines=1).style(
                         container=False)
-
+                
                 file_limit = gr.Slider(0, 100, value=3, step=1.0, label="Search File Limit",
                                        interactive=True)
                 chunk_limit = gr.Slider(0, 100, value=3, step=1.0, label="Search Chunk Limit",

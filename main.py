@@ -73,8 +73,11 @@ def build_kbs_search():
                             show_label=False,
                             placeholder="搜索...", lines=10).style(
                             container=False)
-                with gr.Column(min_width=32, scale=1):
-                    submit_button = gr.Button("Submit", variant="primary")
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        submit_button = gr.Button("Submit", variant="primary")
+                    with gr.Column(scale=1):
+                        stop_button = gr.Button("Stop")
             with gr.Column(scale=1):
                 clear_button = gr.Button("Clear History")
                 metric_type = gr.Textbox(
@@ -92,20 +95,21 @@ def build_kbs_search():
                 glm_top_p = gr.Slider(0, 1, value=0.7, step=0.01, label="Top P", interactive=True)
                 glm_temperature = gr.Slider(0, 1, value=0.95, step=0.01, label="Temperature", interactive=True)
 
-        submit_button.click(kbs.search_kbs,
-                            inputs=[filename_fuzzy_match,
-                                    search_input,
-                                    search_chatbot,
-                                    file_limit,
-                                    chunk_limit,
-                                    metric_type,
-                                    glm_max_length,
-                                    glm_top_p,
-                                    glm_temperature],
-                            outputs=[search_chatbot],
-                            show_progress=True)
+        submit_event = submit_button.click(kbs.search_kbs,
+                                           inputs=[filename_fuzzy_match,
+                                                   search_input,
+                                                   search_chatbot,
+                                                   file_limit,
+                                                   chunk_limit,
+                                                   metric_type,
+                                                   glm_max_length,
+                                                   glm_top_p,
+                                                   glm_temperature],
+                                           outputs=[search_chatbot],
+                                           show_progress=True)
 
         clear_button.click(reset_state(1), outputs=[search_chatbot], show_progress=True)
+        stop_button.click(fn=None, inputs=None, outputs=None, cancels=[submit_event])
 
 
 def build_kbs_generate():
@@ -113,12 +117,13 @@ def build_kbs_generate():
         with gr.Row():
             with gr.Column(scale=4):
                 generate_kbs_text_output = gr.Textbox(label='Output')
-                with gr.Column(scale=1):
-                    update_button = gr.Button('Update')
-                with gr.Column(scale=1):
-                    reset_button = gr.Button('Reset')
-                with gr.Column(scale=1):
-                    stop_button = gr.Button('Stop')
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        update_button = gr.Button('Update')
+                    with gr.Column(scale=1):
+                        reset_button = gr.Button('Reset')
+                    with gr.Column(scale=1):
+                        stop_button = gr.Button('Stop')
 
             with gr.Column(scale=1):
                 chunk_size = gr.Slider(10, 4096,
@@ -158,11 +163,12 @@ def build_file_recursive_predict():
                 with gr.Column(scale=12):
                     user_input = gr.Textbox(show_label=False, placeholder="Input...", lines=10).style(
                             container=False)
-                with gr.Column(min_width=32, scale=1):
+                with gr.Row():
                     with gr.Column(scale=1):
                         submit_button = gr.Button("Submit", variant="primary")
                     with gr.Column(scale=1):
-                        stop_button = gr.Button(value="Stop", variant='Danger')
+                        stop_button = gr.Button("Stop")
+
             with gr.Column(scale=1):
                 clear_button = gr.Button("Clear History")
 
@@ -219,7 +225,7 @@ def build_chatglm():
                     with gr.Column(scale=1):
                         submit_button = gr.Button("Submit", variant="primary")
                     with gr.Column(scale=1):
-                        stop_button = gr.Button(value="Stop", variant='Danger')
+                        stop_button = gr.Button("Stop")
             with gr.Column(scale=1):
                 emptyBtn = gr.Button("Clear History")
                 max_length = gr.Slider(0, 4096, value=2048, step=1.0, label="Maximum length", interactive=True)

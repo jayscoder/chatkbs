@@ -63,8 +63,15 @@ def generate_kbs(chunk_size: int, chunk_overlap: int, chunk_limit: int):
         yield '\n'.join(outputs)
 
 
-def generate_kbs_file(root: str, filename: str, old_md5: str, chunk_size: int, chunk_overlap: int,
-                      chunk_limit: int) -> str:
+def generate_kbs_file(
+        root: str,
+        filename: str,
+        old_md5: str,
+        chunk_size: int,
+        chunk_overlap: int,
+        chunk_limit: int) -> str:
+    import embed_utils
+
     filepath = os.path.join(root, filename)
 
     filename_md5 = utils.calculate_md5(filename)
@@ -89,7 +96,7 @@ def generate_kbs_file(root: str, filename: str, old_md5: str, chunk_size: int, c
 
         yield f'字符数={file_raw_text_length}'
 
-        file_text_embedding = utils.text_embedding(file_full_text)
+        file_text_embedding = embed_utils.calculate_embedding(file_full_text)
 
         filetype = ext.replace('.', '')
         # 获取当前的13位时间戳（以毫秒为单位）
@@ -112,12 +119,12 @@ def generate_kbs_file(root: str, filename: str, old_md5: str, chunk_size: int, c
                 embedding=file_text_embedding
         )
 
-        chunks = utils.text_to_chunks(file_raw_text, size=chunk_size, overlap=chunk_overlap)
+        chunks = utils.text_to_chunks(file_raw_text, size=chunk_size, overlap=chunk_overlap, limit=chunk_limit)
         for no, chunk in enumerate(chunks):
             chunk_full_text = f'文件 {filename} 第{no}部分\n' + chunk
 
             chunk_md5 = utils.calculate_md5(chunk_full_text)
-            chunk_embedding = utils.text_embedding(chunk_full_text)
+            chunk_embedding = embed_utils.calculate_embedding(chunk_full_text)
 
             sql = '''INSERT OR REPLACE INTO kbs_chunk (filename_md5, filename_md5_no, chunk, chunk_no, chunk_length, summary, filename, create_time, embedding, chunk_md5, update_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -157,17 +164,18 @@ def search_kbs(filename_fuzzy_match: str,
                search_input: str,
                chatbot: list[tuple[str, str]],
                search_file_limit: int,
-               search_chunk_limit: int,
+               search_chunk_limit: int, chunk_limit: int,
                search_metric_type: str,
                glm_max_length: int,
                glm_top_p: float,
                glm_temperature: float):
+    import embed_utils
     print(
             f'search_file_limit={search_file_limit} search_chunk_limit={search_chunk_limit} search_metric_type={search_metric_type}')
     chatbot[:] = []
     chatbot.append((utils.show_text(search_input), ""))
 
-    search_embedding = utils.text_embedding(search_input)
+    search_embedding = embed_utils.calculate_embedding(search_input)
     db_milvus.kbs_chunk_milvus.load()
     db_milvus.kbs_file_milvus.load()
 

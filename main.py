@@ -7,7 +7,8 @@ import os
 
 
 def add_kbs_text(text):
-    text_embedding = utils.text_embedding(text)
+    import embed_utils
+    text_embedding = embed_utils.calculate_embedding(text)
     md5 = utils.calculate_md5(text)
     chunks = utils.text_to_chunks(text)
     info = {
@@ -170,8 +171,9 @@ def build_chatglm():
 def build_calculate_embedding():
     import numpy as np
     def chat_embedding(text1, text2):
-        em1 = utils.text_embedding(text1)
-        em2 = utils.text_embedding(text2)
+        import embed_utils
+        em1 = embed_utils.calculate_embedding(text1)
+        em2 = embed_utils.calculate_embedding(text2)
         em1_np = np.array(em1)
         em2_np = np.array(em2)
         l2_distance = np.linalg.norm(em1_np - em2_np)

@@ -1,4 +1,3 @@
-import tensorflow_hub as hub
 import hashlib
 import nltk
 import os
@@ -7,7 +6,7 @@ import re
 from bs4 import BeautifulSoup
 import unicodedata
 
-embed = hub.load("https://wangtong15.oss-cn-beijing.aliyuncs.com/models/universal-sentence-encoder_4.tar.gz")
+_EMBED = None
 
 nltk.download('punkt')
 nltk.download('stopwords')
@@ -34,10 +33,6 @@ def replace_fullwidth_chars(text):
             replaced_text += char
 
     return replaced_text
-
-
-def text_embedding(text: str) -> list[float]:
-    return embed([text]).numpy().tolist()[0]
 
 
 def calculate_md5(text: str) -> str:

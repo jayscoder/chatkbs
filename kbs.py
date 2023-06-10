@@ -234,10 +234,11 @@ def glm_predict(input_text, chatbot, max_length, top_p, temperature, history):
         yield chatbot, history
 
 
-def file_recursive_predict(
+def files_long_predict(
         files,
         input_text,
         chatbot,
+        read_mode: str,
         chunk_size: int,
         chunk_overlap: int,
         chunk_limit: int,
@@ -276,7 +277,7 @@ def file_recursive_predict(
                             max_length=max_length,
                             top_p=top_p,
                             temperature=temperature):
-                        progress_text = f'第{rpi+1}次阅读: [{filename} 第{idx+1}部分] 进度: {progress_i}/{total}'
+                        progress_text = f'第{rpi + 1}次阅读: [{filename} 第{idx + 1}部分] 进度: {progress_i}/{total}'
                         chatbot[-1] = (utils.show_text(input_text) + f"\n---\n{memory}", utils.show_text(
                                 f"{progress_text}\n{response}"))
                         # 显示文本
@@ -305,10 +306,11 @@ def file_recursive_predict(
         yield chatbot, history
 
 
-def text_recursive_predict(
+def text_long_predict(
         context_text,
         input_text,
         chatbot,
+        read_mode: str,
         chunk_size: int,
         chunk_overlap: int,
         chunk_limit: int,
@@ -336,7 +338,7 @@ def text_recursive_predict(
                         max_length=max_length,
                         top_p=top_p,
                         temperature=temperature):
-                    progress_text = f'第{rpi+1}次阅读: [第{idx+1}部分] 进度: {progress_i}/{total}'
+                    progress_text = f'第{rpi + 1}次阅读: [第{idx + 1}部分] 进度: {progress_i}/{total}'
                     chatbot[-1] = (utils.show_text(input_text) + f"\n---\n{memory}", utils.show_text(
                             f"{progress_text}\n{response}"))
                     # 显示文本

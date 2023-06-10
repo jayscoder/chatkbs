@@ -82,11 +82,11 @@ def build_kbs_search():
                         stop_button = gr.Button("Stop")
             with gr.Column(scale=1):
                 clear_button = gr.Button("Clear History")
+
                 metric_type = gr.Dropdown(
                         choices=milvus_metric_type_options,
                         label="Milvus Metric Type",
-                        value='L2', lines=1).style(
-                        container=False)
+                        value='L2', lines=1)
 
                 file_limit = gr.Slider(0, 100, value=3, step=1.0, label="Search File Limit",
                                        interactive=True)
@@ -154,8 +154,8 @@ def build_kbs_generate():
         stop_button.click(fn=None, inputs=None, outputs=None, cancels=[update_event, reset_event])
 
 
-def build_file_recursive_predict():
-    with gr.Tab("ChatGLM-6B-File-Recursive"):
+def build_file_long_predict():
+    with gr.Tab("ChatGLM-6B-File"):
         files_input = gr.Files(label='Upload your PDF/Txt/Markdown here',
                                file_types=['.pdf', '.txt', '.md', '.py', '.html', '.js', '.java', '.h', '.cpp', '.c',
                                            '.hpp', '.json', '.toml', '.ipynb', '.yml'])
@@ -174,6 +174,11 @@ def build_file_recursive_predict():
 
             with gr.Column(scale=1):
                 clear_button = gr.Button("Clear History")
+
+                read_mode = gr.Dropdown(
+                        choices=['Recursive', 'ForEach'],
+                        label="长文本阅读模式",
+                        value='Recursive', lines=1)
 
                 chunk_size = gr.Slider(10, 4096,
                                        value=1500,
@@ -195,7 +200,7 @@ def build_file_recursive_predict():
                 file_repeat = gr.Slider(1, 10,
                                         value=1,
                                         step=1.0,
-                                        label="文件迭代阅读次数",
+                                        label="文件阅读次数",
                                         interactive=True)
 
                 max_length = gr.Slider(0, 4096, value=2048, step=1.0, label="ChatGLM Maximum length", interactive=True)
@@ -204,8 +209,9 @@ def build_file_recursive_predict():
 
         history = gr.State([])
 
-        submit_event = submit_button.click(kbs.file_recursive_predict,
-                                           [files_input, user_input, chatbot, chunk_size, chunk_overlap, chunk_limit,
+        submit_event = submit_button.click(kbs.files_long_predict,
+                                           [files_input, user_input, chatbot, read_mode, chunk_size, chunk_overlap,
+                                            chunk_limit,
                                             file_repeat,
                                             max_length, top_p, temperature, history],
                                            [chatbot, history],
@@ -236,6 +242,11 @@ def build_text_recursive_predict():
             with gr.Column(scale=1):
                 clear_button = gr.Button("Clear History")
 
+                read_mode = gr.Dropdown(
+                        choices=['Recursive', 'ForEach'],
+                        label="长文本阅读模式",
+                        value='Recursive', lines=1)
+
                 chunk_size = gr.Slider(10, 4096,
                                        value=1500,
                                        step=1.0,
@@ -265,8 +276,8 @@ def build_text_recursive_predict():
 
         history = gr.State([])
 
-        submit_event = submit_button.click(kbs.text_recursive_predict,
-                                           [context_input, user_input, chatbot, chunk_size, chunk_overlap, chunk_limit,
+        submit_event = submit_button.click(kbs.text_long_predict,
+                                           [context_input, user_input, chatbot, read_mode, chunk_size, chunk_overlap, chunk_limit,
                                             file_repeat,
                                             max_length, top_p, temperature, history],
                                            [chatbot, history],
@@ -370,7 +381,7 @@ with gr.Blocks(title='ChatKBS') as demo:
     #     pass
 
     build_text_recursive_predict()
-    build_file_recursive_predict()
+    build_file_long_predict()
 
     build_chatglm()
     build_pdf2text()

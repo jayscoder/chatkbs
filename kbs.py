@@ -302,8 +302,8 @@ def files_long_predict(
         total = len(total_chunks) * repeat
         progress_i = 0
 
-        total_history = [[] for i in range(len(total_chunks))]
-        total_results = ['' for i in range(len(total_chunks))]
+        total_history = [[] for _ in range(len(total_chunks))]
+        total_results = ['' for _ in range(len(total_chunks))]
 
         for rpi in range(repeat):
             for idx, (filename, chunk_no, chunk) in enumerate(total_chunks):

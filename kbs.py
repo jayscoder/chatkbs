@@ -1,14 +1,11 @@
-from typing import Union
 import os
 import utils
 import config
 import sqlite3
 import time
-from datetime import datetime
 import json
 from collections import defaultdict
 import db_utils
-import db_milvus
 import chatai
 
 
@@ -71,6 +68,7 @@ def generate_kbs_file(
         chunk_overlap: int,
         chunk_limit: int) -> str:
     import embed_utils
+    import db_milvus
 
     filepath = os.path.join(root, filename)
 
@@ -170,6 +168,8 @@ def search_kbs(filename_fuzzy_match: str,
                glm_top_p: float,
                glm_temperature: float):
     import embed_utils
+    import db_milvus
+
     print(
             f'search_file_limit={search_file_limit} search_chunk_limit={search_chunk_limit} search_metric_type={search_metric_type}')
     chatbot[:] = []

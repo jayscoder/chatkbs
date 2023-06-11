@@ -412,9 +412,9 @@ def text_long_predict(
             for chunk_no, chunk in enumerate(chunks):
                 history = total_history[chunk_no]
                 if len(history) > 0:
-                    prompt = f'上下文片段:\n{chunk}\n---\n\"{input_text}'
-                else:
                     prompt = f'上下文片段:\n{chunk}\n---\n(优化上次的回答内容)\"{input_text}'
+                else:
+                    prompt = f'上下文片段:\n{chunk}\n---\n\"{input_text}'
                 cache_response = ''
                 for response, history in chatai.stream_chat(
                         prompt,

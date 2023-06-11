@@ -250,60 +250,88 @@ def files_long_predict(
 ):
     chatbot.append((utils.show_text(input_text), ""))
     yield chatbot, history
-    file_chunks = { }
-    total_chunks = 0
+    total_chunks = []
 
     for file in files:
         text = utils.advanced_read_text(file.name)
         chunks = utils.text_to_chunks(text, size=chunk_size, overlap=chunk_overlap, limit=chunk_limit)
         filename = os.path.basename(file.name)
         if len(chunks) > 0:
-            file_chunks[filename] = chunks
-            total_chunks += len(chunks)
+            for chunk_no, chunk in enumerate(chunks):
+                total_chunks.append((filename, chunk_no, chunk))
 
-    total = total_chunks * repeat
-    progress_i = 0
-    memory = ''
-    if total > 1:
+    if read_mode == 'Recursive':
+        total = len(total_chunks) * repeat
+        progress_i = 0
+        memory = ''
         for rpi in range(repeat):
-            for filename in file_chunks:
-                chunks = file_chunks[filename]
-                for idx, chunk in enumerate(chunks):
-                    prompt = f'当前上下文:\n{memory}\n---\n新的上下文片段:\n文件名={filename}\n{chunk}\n---\n根据用户关心的问题\"{input_text}\"，结合新的上下文片段，生成新的上下文：'
-                    cache_memory = ''
-                    for response, history in chatai.stream_chat(
-                            prompt,
-                            history=history,
-                            max_length=max_length,
-                            top_p=top_p,
-                            temperature=temperature):
-                        progress_text = f'第{rpi + 1}次阅读: [{filename} 第{idx + 1}部分] 进度: {progress_i}/{total}'
-                        chatbot[-1] = (utils.show_text(input_text) + f"\n---\n{memory}", utils.show_text(
-                                f"{progress_text}\n{response}"))
-                        # 显示文本
-                        yield chatbot, history
-                        cache_memory = response
-                    memory = cache_memory
-
-                    # 丢弃history的最后一项
-                    history = history[:-1]
+            for (filename, chunk_no, chunk) in total_chunks:
+                prompt = f'当前上下文:\n{memory}\n---\n新的上下文片段:\n文件名={filename} 片段序号={chunk_no}\n{chunk}\n---\n根据用户关心的问题\"{input_text}\"，结合新的上下文片段，生成新的上下文：'
+                cache_memory = ''
+                for response, history in chatai.stream_chat(
+                        prompt,
+                        history=history,
+                        max_length=max_length,
+                        top_p=top_p,
+                        temperature=temperature):
+                    progress_text = f'第{rpi + 1}次阅读: [{filename} 第{chunk_no + 1}部分] 进度: {progress_i}/{total}'
+                    chatbot[-1] = (utils.show_text(input_text) + f"\n---\n{memory}", utils.show_text(
+                            f"{progress_text}\n{response}"))
+                    # 显示文本
                     yield chatbot, history
-                    progress_i += 1
-    elif total == 1:
-        for filename in file_chunks:
-            memory = file_chunks[filename][0]
+                    cache_memory = response
+                memory = cache_memory
 
-    prompt = f'上下文: {memory}\n---\n{input_text}'
+                # 丢弃history的最后一项
+                history = history[:-1]
+                yield chatbot, history
+                progress_i += 1
 
-    for response, history in chatai.stream_chat(
-            prompt,
-            history=history,
-            max_length=max_length,
-            top_p=top_p,
-            temperature=temperature
-    ):
-        chatbot[-1] = (utils.show_text(input_text), utils.show_text(response))
-        yield chatbot, history
+        prompt = f'上下文: {memory}\n---\n{input_text}'
+
+        for response, history in chatai.stream_chat(
+                prompt,
+                history=history,
+                max_length=max_length,
+                top_p=top_p,
+                temperature=temperature
+        ):
+            chatbot[-1] = (utils.show_text(input_text), utils.show_text(response))
+            yield chatbot, history
+    else:
+        # ForEach
+        total = total_chunks * repeat
+        progress_i = 0
+
+        total_history = [[] for i in range(len(total_chunks))]
+        total_results = ['' for i in range(len(total_chunks))]
+
+        for rpi in range(repeat):
+            for idx, (filename, chunk_no, chunk) in enumerate(total_chunks):
+                history = total_history[idx]
+                if len(history) > 0:
+                    prompt = f'上下文片段:\n文件名={filename}\n{chunk}\n---\n\"{input_text}'
+                else:
+                    prompt = f'上下文片段:\n文件名={filename}\n{chunk}\n---\n(优化上次的回答内容)\"{input_text}'
+                cache_response = ''
+                for response, history in chatai.stream_chat(
+                        prompt,
+                        history=history,
+                        max_length=max_length,
+                        top_p=top_p,
+                        temperature=temperature):
+                    progress_text = f'第{rpi + 1}次阅读: [{filename} 第{idx + 1}部分] 进度: {progress_i}/{total}'
+                    show_results = '\n\n'.join(total_results)
+
+                    chatbot[-1] = (utils.show_text(input_text) + f"\n\n{show_results}", utils.show_text(
+                            f"{progress_text}\n{response}"))
+                    # 显示文本
+                    yield chatbot, history
+                    cache_response = ''
+
+                total_results[idx] = cache_response
+                total_history[idx] = history
+                progress_i += 1
 
 
 def text_long_predict(

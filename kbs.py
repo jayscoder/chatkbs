@@ -311,9 +311,10 @@ def files_long_predict(
             for idx, (filename, chunk_no, chunk) in enumerate(total_chunks):
                 history = total_history[idx]
                 if len(history) > 0:
-                    prompt = f'上下文片段:\n文件名={filename}\n{chunk}\n---\n{input_text}'
-                else:
                     prompt = f'上下文片段:\n文件名={filename}\n{chunk}\n---\n(优化上次的回答内容){input_text}'
+                else:
+                    prompt = f'上下文片段:\n文件名={filename}\n{chunk}\n---\n{input_text}'
+
                 cache_response = ''
                 for response, history in chatai.stream_chat(
                         prompt,

@@ -158,7 +158,7 @@ def build_file_long_predict():
     with gr.Tab("ChatGLM-6B-File"):
         files_input = gr.Files(label='Upload your PDF/Txt/Markdown here',
                                file_types=['.pdf', '.txt', '.md', '.py', '.html', '.js', '.java', '.h', '.cpp', '.c',
-                                           '.hpp', '.json', '.toml', '.ipynb', '.yml'])
+                                           '.hpp', '.json', '.toml', '.ipynb', '.yml', '.rst'])
 
         chatbot = gr.Chatbot()
         with gr.Row():

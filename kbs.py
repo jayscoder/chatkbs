@@ -273,7 +273,7 @@ def files_long_predict(
                         max_length=max_length,
                         top_p=top_p,
                         temperature=temperature):
-                    progress_text = f'第{rpi + 1}次阅读: [{filename} 第{chunk_no + 1}部分] 进度: {progress_i}/{total}'
+                    progress_text = f'第{rpi + 1}次阅读: [{filename} 第{chunk_no + 1}部分] 进度: {progress_i + 1}/{total}'
                     chatbot[-1] = (utils.show_text(input_text) + f"\n---\n{memory}", utils.show_text(
                             f"{progress_text}\n{response}"))
                     # 显示文本
@@ -319,14 +319,14 @@ def files_long_predict(
                         max_length=max_length,
                         top_p=top_p,
                         temperature=temperature):
-                    progress_text = f'第{rpi + 1}次阅读: [{filename} 第{idx + 1}部分] 进度: {progress_i}/{total}'
+                    progress_text = f'第{rpi + 1}次阅读: [{filename} 第{idx + 1}部分] 进度: {progress_i + 1}/{total}'
                     show_results = '\n\n'.join(total_results)
 
                     chatbot[-1] = (utils.show_text(input_text) + f"\n\n{show_results}", utils.show_text(
                             f"{progress_text}\n{response}"))
                     # 显示文本
                     yield chatbot, history
-                    cache_response = ''
+                    cache_response = response
 
                 total_results[idx] = cache_response
                 total_history[idx] = history

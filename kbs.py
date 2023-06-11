@@ -311,9 +311,9 @@ def files_long_predict(
             for idx, (filename, chunk_no, chunk) in enumerate(total_chunks):
                 history = total_history[idx]
                 if len(history) > 0:
-                    prompt = f'上下文片段:\n文件名={filename}\n{chunk}\n---\n\"{input_text}'
+                    prompt = f'上下文片段:\n文件名={filename}\n{chunk}\n---\n{input_text}'
                 else:
-                    prompt = f'上下文片段:\n文件名={filename}\n{chunk}\n---\n(优化上次的回答内容)\"{input_text}'
+                    prompt = f'上下文片段:\n文件名={filename}\n{chunk}\n---\n(优化上次的回答内容){input_text}'
                 cache_response = ''
                 for response, history in chatai.stream_chat(
                         prompt,
@@ -334,11 +334,11 @@ def files_long_predict(
                 total_history[idx] = history
                 progress_i += 1
 
-                show_results = '\n\n'.join(total_results)
-                chatbot[-1] = (utils.show_text(input_text) + f"\n\n{show_results}", utils.show_text(
-                        f"完成"))
-                # 显示文本
-                yield chatbot, history
+        show_results = '\n\n'.join(total_results)
+        chatbot[-1] = (utils.show_text(input_text) + f"\n\n{show_results}", utils.show_text(
+                f"完成"))
+        # 显示文本
+        yield chatbot, history
 
 
 def text_long_predict(
@@ -435,8 +435,8 @@ def text_long_predict(
                 total_history[chunk_no] = history
                 progress_i += 1
 
-                show_results = '\n\n'.join(total_results)
+        show_results = '\n\n'.join(total_results)
 
-                chatbot[-1] = (utils.show_text(input_text) + f"\n\n{show_results}", "完成")
-                # 显示文本
-                yield chatbot, history
+        chatbot[-1] = (utils.show_text(input_text) + f"\n\n{show_results}", "完成")
+        # 显示文本
+        yield chatbot, history

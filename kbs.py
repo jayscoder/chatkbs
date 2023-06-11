@@ -297,6 +297,8 @@ def files_long_predict(
         ):
             chatbot[-1] = (utils.show_text(input_text), utils.show_text(response))
             yield chatbot, history
+
+
     else:
         # ForEach
         total = len(total_chunks) * repeat
@@ -332,6 +334,12 @@ def files_long_predict(
                 total_history[idx] = history
                 progress_i += 1
 
+                show_results = '\n\n'.join(total_results)
+                chatbot[-1] = (utils.show_text(input_text) + f"\n\n{show_results}", utils.show_text(
+                        f"完成"))
+                # 显示文本
+                yield chatbot, history
+
 
 def text_long_predict(
         context_text,
@@ -352,42 +360,83 @@ def text_long_predict(
     chunks = utils.text_to_chunks(context_text, size=chunk_size, overlap=chunk_overlap, limit=chunk_limit)
 
     total = len(chunks) * repeat
-    memory = ''
-    progress_i = 0
-    if total > 1:
+    if read_mode == 'Recursive':
+        memory = ''
+        progress_i = 0
+        if total > 1:
+            for rpi in range(repeat):
+                for idx, chunk in enumerate(chunks):
+                    prompt = f'当前上下文:\n{memory}\n---\n新的上下文片段:\n{chunk}\n---\n根据用户关心的问题\"{input_text}\"，结合新的上下文片段，生成新的上下文：'
+                    cache_memory = ''
+                    for response, history in chatai.stream_chat(
+                            prompt,
+                            history=history,
+                            max_length=max_length,
+                            top_p=top_p,
+                            temperature=temperature):
+                        progress_text = f'第{rpi + 1}次阅读: [第{idx + 1}部分] 进度: {progress_i}/{total}'
+                        chatbot[-1] = (utils.show_text(input_text) + f"\n---\n{memory}", utils.show_text(
+                                f"{progress_text}\n{response}"))
+                        # 显示文本
+                        yield chatbot, history
+                        cache_memory = response
+                    memory = cache_memory
+
+                    # 丢弃history的最后一项
+                    history = history[:-1]
+                    yield chatbot, history
+                    progress_i += 1
+        elif len(chunks) > 0:
+            memory = chunks[0]
+
+        prompt = f'上下文: {memory}\n---\n{input_text}'
+
+        for response, history in chatai.stream_chat(
+                prompt,
+                history=history,
+                max_length=max_length,
+                top_p=top_p,
+                temperature=temperature
+        ):
+            chatbot[-1] = (utils.show_text(input_text), utils.show_text(response))
+            yield chatbot, history
+    else:
+        # ForEach
+        total = len(chunks) * repeat
+        progress_i = 0
+
+        total_history = [[] for _ in range(len(chunks))]
+        total_results = ['' for _ in range(len(chunks))]
+
         for rpi in range(repeat):
-            for idx, chunk in enumerate(chunks):
-                prompt = f'当前上下文:\n{memory}\n---\n新的上下文片段:\n{chunk}\n---\n根据用户关心的问题\"{input_text}\"，结合新的上下文片段，生成新的上下文：'
-                cache_memory = ''
+            for chunk_no, chunk in enumerate(chunks):
+                history = total_history[chunk_no]
+                if len(history) > 0:
+                    prompt = f'上下文片段:\n{chunk}\n---\n\"{input_text}'
+                else:
+                    prompt = f'上下文片段:\n{chunk}\n---\n(优化上次的回答内容)\"{input_text}'
+                cache_response = ''
                 for response, history in chatai.stream_chat(
                         prompt,
                         history=history,
                         max_length=max_length,
                         top_p=top_p,
                         temperature=temperature):
-                    progress_text = f'第{rpi + 1}次阅读: [第{idx + 1}部分] 进度: {progress_i}/{total}'
-                    chatbot[-1] = (utils.show_text(input_text) + f"\n---\n{memory}", utils.show_text(
+                    progress_text = f'第{rpi + 1}次阅读: [第{chunk_no + 1}部分] 进度: {progress_i + 1}/{total}'
+                    show_results = '\n\n'.join(total_results)
+
+                    chatbot[-1] = (utils.show_text(input_text) + f"\n\n{show_results}", utils.show_text(
                             f"{progress_text}\n{response}"))
                     # 显示文本
                     yield chatbot, history
-                    cache_memory = response
-                memory = cache_memory
+                    cache_response = response
 
-                # 丢弃history的最后一项
-                history = history[:-1]
-                yield chatbot, history
+                total_results[chunk_no] = cache_response
+                total_history[chunk_no] = history
                 progress_i += 1
-    elif len(chunks) > 0:
-        memory = chunks[0]
 
-    prompt = f'上下文: {memory}\n---\n{input_text}'
+                show_results = '\n\n'.join(total_results)
 
-    for response, history in chatai.stream_chat(
-            prompt,
-            history=history,
-            max_length=max_length,
-            top_p=top_p,
-            temperature=temperature
-    ):
-        chatbot[-1] = (utils.show_text(input_text), utils.show_text(response))
-        yield chatbot, history
+                chatbot[-1] = (utils.show_text(input_text) + f"\n\n{show_results}", "完成")
+                # 显示文本
+                yield chatbot, history

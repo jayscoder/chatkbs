@@ -256,9 +256,8 @@ def files_long_predict(
         text = utils.advanced_read_text(file.name)
         chunks = utils.text_to_chunks(text, size=chunk_size, overlap=chunk_overlap, limit=chunk_limit)
         filename = os.path.basename(file.name)
-        if len(chunks) > 0:
-            for chunk_no, chunk in enumerate(chunks):
-                total_chunks.append((filename, chunk_no, chunk))
+        for chunk_no, chunk in enumerate(chunks):
+            total_chunks.append((filename, chunk_no, chunk))
 
     if read_mode == 'Recursive':
         total = len(total_chunks) * repeat
@@ -300,7 +299,7 @@ def files_long_predict(
             yield chatbot, history
     else:
         # ForEach
-        total = total_chunks * repeat
+        total = len(total_chunks) * repeat
         progress_i = 0
 
         total_history = [[] for i in range(len(total_chunks))]
